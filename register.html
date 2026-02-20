@@ -13,50 +13,31 @@
             display: flex; justify-content: center; align-items: center; 
             min-height: 100vh; text-align: center; 
         }
-        .overlay-reg { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.65); z-index: 1; 
-        }
+        .overlay-reg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.65); z-index: 1; }
         .card { 
             background: rgba(0, 0, 0, 0.85); padding: 30px; border-radius: 25px; 
             border: 1px solid var(--blue); width: 85%; max-width: 350px; 
             backdrop-filter: blur(15px); z-index: 2; position: relative;
-            box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
         }
-        input { 
-            width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; 
-            border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); 
-            color: white; box-sizing: border-box; font-size: 16px;
-        }
-        button { 
-            width: 100%; padding: 15px; background: var(--blue); color: black; 
-            border: none; border-radius: 10px; font-weight: bold; cursor: pointer; 
-            font-size: 16px; margin-top: 15px; transition: 0.3s;
-        }
-        button:active { transform: scale(0.95); }
-        .status { margin-top: 15px; font-size: 13px; color: #ffeb3b; min-height: 20px; }
-        a { color: var(--blue); text-decoration: none; font-weight: bold; }
+        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: var(--blue); color: black; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .status { margin-top: 15px; font-size: 13px; color: #ffeb3b; }
+        a { color: var(--blue); text-decoration: none; }
     </style>
 </head>
 <body>
     <div class="overlay-reg"></div>
-
     <div class="card">
-        <h1 style="color:var(--blue); letter-spacing:3px; margin-bottom: 5px;">STARLINK</h1>
-        <p style="margin-top: 0; opacity: 0.8;">CRÉER UN COMPTE</p>
-        <div id="loadingMsg" style="font-size:10px; color:gray; margin-bottom: 10px;">Liaison Satellite...</div>
+        <h1 style="color:var(--blue);">STARLINK</h1>
+        <p>CRÉER UN COMPTE</p>
         
-        <input type="tel" id="regPhone" placeholder="Téléphone (ex: 08...)" maxlength="10">
-        <input type="password" id="regPass" placeholder="Mot de passe (6 car. min)">
-        <input type="text" id="referralInput" placeholder="Code d'invitation (Automatique)">
+        <input type="tel" id="regPhone" placeholder="Téléphone">
+        <input type="password" id="regPass" placeholder="Mot de passe">
+        <input type="text" id="referralInput" placeholder="Code d'invitation">
         
-        <button id="btnAction">S'INSCRIRE MAINTENANT</button>
+        <button id="btnAction">S'INSCRIRE</button>
         <div id="statusMsg" class="status"></div>
-        
-        <p style="font-size:13px; margin-top: 20px;">
-            Déjà membre ? <br>
-            <a href="login.html">Se connecter au terminal</a>
-        </p>
+        <p style="font-size:13px;"><a href="login.html">Déjà membre ? Se connecter</a></p>
     </div>
 
 <script type="module">
@@ -75,43 +56,37 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // --- NOVEAU : CAPTURER LE CODE D'INVITATION DANS LE LIEN ---
-    window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('inviteCode');
-        if (code) {
-            const input = document.getElementById("referralInput");
-            input.value = code;
-            input.readOnly = true; // Empêche de modifier le parrain
-            input.style.borderColor = "#4caf50";
-            document.getElementById('loadingMsg').innerText = "📡 Invitation détectée : " + code;
-        } else {
-            document.getElementById('loadingMsg').innerText = "✅ Système de Liaison Prêt";
+    // --- SYSTÈME DE PARRAINAGE SÉCURISÉ ---
+    try {
+        const parametres = new URLSearchParams(window.location.search);
+        const codeTrouve = parametres.get('inviteCode');
+        if (codeTrouve) {
+            document.getElementById("referralInput").value = codeTrouve;
         }
-    });
+    } catch (err) {
+        console.log("Pas de code d'invitation");
+    }
 
-    document.getElementById("btnAction").addEventListener("click", async () => {
+    document.getElementById("btnAction").onclick = async () => {
         const phone = document.getElementById("regPhone").value.trim();
         const pass = document.getElementById("regPass").value.trim();
-        const status = document.getElementById("statusMsg");
         const sponsor = document.getElementById("referralInput").value.trim() || "DIRECT";
+        const status = document.getElementById("statusMsg");
 
-        if (phone.length < 10) { status.innerText = "❌ Numéro invalide"; return; }
-        if (pass.length < 6) { status.innerText = "❌ Mot de passe trop court"; return; }
-
-        status.innerText = "⏳ Analyse des données...";
+        if (phone.length < 10 || pass.length < 6) {
+            status.innerText = "❌ Vérifiez vos informations";
+            return;
+        }
 
         try {
             const userRef = ref(db, 'users/' + phone);
             const snap = await get(userRef);
-            
             if (snap.exists()) {
-                status.innerText = "❌ Ce numéro possède déjà un terminal.";
+                status.innerText = "❌ Numéro déjà utilisé";
                 return;
             }
 
             const myCode = "STAR-" + Math.floor(1000 + Math.random() * 9000);
-            
             await set(userRef, {
                 password: pass,
                 inviteCode: myCode,
@@ -122,15 +97,12 @@
                 date_inscription: new Date().toISOString()
             });
 
-            status.style.color = "#4caf50";
-            status.innerText = "✅ INSCRIPTION RÉUSSIE !";
-            setTimeout(() => { window.location.href = "login.html"; }, 1500);
-
+            status.innerText = "✅ RÉUSSI !";
+            setTimeout(() => { window.location.href = "login.html"; }, 1000);
         } catch (e) {
-            status.innerText = "⚠️ Erreur satellite.";
-            console.error(e);
+            status.innerText = "⚠️ Erreur réseau";
         }
-    });
+    };
 </script>
 </body>
 </html>
