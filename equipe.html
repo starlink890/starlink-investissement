@@ -8,12 +8,12 @@
         :root { --blue: #00d2ff; --dark: #050a14; --gold: #ffd700; }
         body { 
             margin: 0; font-family: 'Segoe UI', sans-serif; 
-            /* Correction du fond pour utiliser ton image */
             background: var(--dark) url('IMG_0870.jpeg') no-repeat center center fixed;
             background-size: cover; color: white; padding-bottom: 100px;
         }
         .overlay { background: rgba(5, 10, 20, 0.9); min-height: 100vh; padding: 20px; }
         
+        /* Carte d'invitation */
         .invite-card { 
             background: linear-gradient(145deg, rgba(0, 210, 255, 0.1), rgba(0, 0, 0, 0.5));
             border-radius: 25px; padding: 25px; border: 1px solid var(--blue);
@@ -22,6 +22,7 @@
         }
         .code-display { font-size: 32px; font-weight: 900; color: var(--blue); margin: 15px 0; letter-spacing: 5px; text-shadow: 0 0 10px var(--blue); }
         
+        /* Grille des Niveaux */
         .level-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 25px; }
         .level-box { 
             background: rgba(255, 255, 255, 0.05); padding: 15px 5px; border-radius: 15px; 
@@ -31,19 +32,24 @@
         .level-box small { font-size: 10px; opacity: 0.7; text-transform: uppercase; }
         .level-tag { font-size: 10px; background: var(--blue); color: black; padding: 2px 6px; border-radius: 5px; font-weight: bold; }
 
+        /* Bouton Partager */
         .btn-share { 
             background: var(--blue); color: black; border: none; padding: 18px; 
             border-radius: 15px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px;
             transition: 0.3s; box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3);
         }
+        .btn-share:active { transform: scale(0.98); }
 
+        /* Stats Globales */
         .global-stats { background: rgba(255,255,255,0.03); border-radius: 20px; padding: 20px; margin-top: 20px; border-left: 4px solid var(--blue); }
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
         .stat-row span { color: var(--blue); font-weight: bold; }
 
+        /* Navbar */
         .navbar { position: fixed; bottom: 0; left:0; width: 100%; background: rgba(5, 10, 20, 0.95); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid rgba(0, 210, 255, 0.3); backdrop-filter: blur(15px); z-index: 1000; }
-        .nav-link { color: white; text-decoration: none; font-size: 11px; text-align: center; opacity: 0.4; }
+        .nav-link { color: white; text-decoration: none; font-size: 11px; text-align: center; opacity: 0.4; transition: 0.3s; }
         .nav-link.active { opacity: 1; color: var(--blue); }
+        .nav-link i { font-size: 20px; display: block; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -55,26 +61,44 @@
         <p style="margin:0; font-size: 12px; opacity: 0.8;">VOTRE LIEN DE PARRAINAGE</p>
         <div class="code-display" id="myCode">...</div>
         <button class="btn-share" id="btnCopy">COPIER LE LIEN D'INVITATION</button>
-        <p id="copyStatus" style="font-size: 12px; color: #4caf50; margin-top: 10px; display: none; font-weight: bold;">✅ Lien copié ! Partagez-le vite.</p>
+        <p id="copyStatus" style="font-size: 12px; color: #4caf50; margin-top: 10px; display: none; font-weight: bold;">✅ Lien sécurisé copié !</p>
     </div>
 
     <div class="level-grid">
-        <div class="level-box"><span class="level-tag">25%</span><small>Niveau 1</small><b id="lvl1Count">0</b></div>
-        <div class="level-box"><span class="level-tag">3%</span><small>Niveau 2</small><b id="lvl2Count">0</b></div>
-        <div class="level-box"><span class="level-tag">1%</span><small>Niveau 3</small><b id="lvl3Count">0</b></div>
+        <div class="level-box">
+            <span class="level-tag">25%</span>
+            <small>Niveau 1</small>
+            <b id="lvl1Count">0</b>
+        </div>
+        <div class="level-box">
+            <span class="level-tag">3%</span>
+            <small>Niveau 2</small>
+            <b id="lvl2Count">0</b>
+        </div>
+        <div class="level-box">
+            <span class="level-tag">1%</span>
+            <small>Niveau 3</small>
+            <b id="lvl3Count">0</b>
+        </div>
     </div>
 
     <div class="global-stats">
         <div class="stat-row">Membres totaux : <span id="totalTeam">0</span></div>
         <div class="stat-row">Commissions gagnées : <span id="totalGains">0 FC</span></div>
+        <div class="stat-row">Statut du réseau : <span style="color: #4caf50;">Actif 🛰️</span></div>
+    </div>
+
+    <div style="margin-top: 25px; font-size: 12px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; line-height: 1.6;">
+        <h4 style="margin:0 0 10px 0; color: var(--blue);">💡 Comment ça marche ?</h4>
+        Partagez votre lien. Lorsqu'un membre de votre <b>Niveau 1</b> recharge son compte, vous recevez instantanément <b>25%</b> de son dépôt.
     </div>
 </div>
 
 <nav class="navbar">
-    <a href="dashboard.html" class="nav-link">Dash</a>
-    <a href="shop.html" class="nav-link">Shop</a>
-    <a href="equipe.html" class="nav-link active">Equipe</a>
-    <a href="profil.html" class="nav-link">Profil</a>
+    <a href="dashboard.html" class="nav-link"><i>📊</i>Dash</a>
+    <a href="shop.html" class="nav-link"><i>📡</i>Shop</a>
+    <a href="equipe.html" class="nav-link active"><i>👥</i>Equipe</a>
+    <a href="profil.html" class="nav-link"><i>👤</i>Profil</a>
 </nav>
 
 <script type="module">
@@ -109,24 +133,29 @@
         }
     });
 
-    // --- CORRECTION CRITIQUE ICI ---
+    // --- CORRECTION DU LIEN DE PARRAINAGE ---
     document.getElementById("btnCopy").onclick = () => {
         const code = document.getElementById("myCode").innerText;
         
-        // On force l'adresse complète avec le dossier starlink-investissement
+        // On force l'adresse complète pour éviter la page blanche
         const link = "https://starlink890.github.io/starlink-investissement/register.html?inviteCode=" + code;
         
-        const tempInput = document.createElement("textarea");
-        tempInput.value = link;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-        
-        const status = document.getElementById("copyStatus");
-        status.style.display = "block";
-        setTimeout(() => { status.style.display = "none"; }, 4000);
+        // Méthode de copie ultra-compatible
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            const status = document.getElementById("copyStatus");
+            status.style.display = "block";
+            setTimeout(() => { status.style.display = "none"; }, 4000);
+        } catch (err) {
+            alert("Lien : " + link);
+        }
+        document.body.removeChild(textArea);
     };
 </script>
+
 </body>
 </html>
