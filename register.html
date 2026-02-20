@@ -48,7 +48,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, get, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
@@ -62,7 +62,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Capture automatique du code dans l'URL
+    // Capture auto du code parrainage
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('inviteCode');
@@ -75,43 +75,53 @@
     document.getElementById("btnAction").onclick = async () => {
         const phone = document.getElementById("regPhone").value.trim();
         const pass = document.getElementById("regPass").value.trim();
-        const status = document.getElementById("statusMsg");
         const sponsorCode = document.getElementById("referralInput").value.trim();
+        const status = document.getElementById("statusMsg");
 
         if (phone.length < 10 || pass.length < 6) {
-            status.innerText = "❌ Vérifiez vos informations (10 chiffres / 6 car.)";
+            status.innerText = "❌ Données invalides (10 chiffres / 6 car. min)";
             return;
         }
 
-        status.innerText = "⏳ Analyse de la liaison...";
+        status.innerText = "⏳ Liaison satellite en cours...";
 
         try {
-            // 1. Vérifier si l'utilisateur existe
+            // 1. Vérifier si l'utilisateur existe déjà
             const userSnap = await get(ref(db, 'users/' + phone));
             if (userSnap.exists()) {
-                status.innerText = "❌ Numéro déjà utilisé.";
+                status.innerText = "❌ Ce numéro possède déjà un compte.";
                 return;
             }
 
-            // 2. Trouver le parrain (Sponsor)
-            let sponsorPhone = null;
-            if (sponsorCode) {
-                const usersSnap = await get(ref(db, 'users'));
-                const allUsers = usersSnap.val();
+            // 2. Gestion de la hiérarchie (Niveaux 1, 2, 3)
+            let parrainLvl1 = null;
+            let parrainLvl2 = null;
+            let parrainLvl3 = null;
+
+            if (sponsorCode && sponsorCode !== "") {
+                const allUsersSnap = await get(ref(db, 'users'));
+                const allUsers = allUsersSnap.val();
+
                 for (let id in allUsers) {
                     if (allUsers[id].inviteCode === sponsorCode) {
-                        sponsorPhone = id;
+                        parrainLvl1 = id; // Téléphone du parrain direct
+                        parrainLvl2 = allUsers[id].parentLvl1 || null;
+                        parrainLvl3 = allUsers[id].parentLvl2 || null;
                         break;
                     }
                 }
             }
 
-            // 3. Créer les données du nouvel utilisateur
-            const myNewCode = "STAR-" + Math.floor(1000 + Math.random() * 9000);
-            const userData = {
+            const myCode = "STAR-" + Math.floor(1000 + Math.random() * 9000);
+
+            // 3. Enregistrement du nouvel utilisateur
+            await set(ref(db, 'users/' + phone), {
                 password: pass,
-                inviteCode: myNewCode,
-                referredBy: sponsorPhone || "DIRECT", // On stocke le TEL du parrain pour faciliter les calculs
+                inviteCode: myCode,
+                referredBy: sponsorCode || "DIRECT",
+                parentLvl1: parrainLvl1, // Stockage permanent de la lignée
+                parentLvl2: parrainLvl2,
+                parentLvl3: parrainLvl3,
                 solde_principal: 0,
                 solde_gains: 0,
                 solde_commissions: 0,
@@ -119,28 +129,26 @@
                 count_lvl2: 0,
                 count_lvl3: 0,
                 date_inscription: new Date().toISOString()
+            });
+
+            // 4. Mise à jour des compteurs du réseau (Transaction sécurisée)
+            const updateCount = (tel, lvl) => {
+                if (tel) {
+                    const countRef = ref(db, `users/${tel}/count_lvl${lvl}`);
+                    runTransaction(countRef, (current) => (current || 0) + 1);
+                }
             };
 
-            await set(ref(db, 'users/' + phone), userData);
-
-            // 4. Augmenter le compteur Niveau 1 du parrain
-            if (sponsorPhone) {
-                const sponsorRef = ref(db, 'users/' + sponsorPhone);
-                const snapSponsor = await get(sponsorRef);
-                if (snapSponsor.exists()) {
-                    const currentCount = snapSponsor.val().count_lvl1 || 0;
-                    await update(ref(db, 'users/' + sponsorPhone), {
-                        count_lvl1: currentCount + 1
-                    });
-                }
-            }
+            updateCount(parrainLvl1, 1);
+            updateCount(parrainLvl2, 2);
+            updateCount(parrainLvl3, 3);
 
             status.style.color = "#4caf50";
             status.innerText = "✅ INSCRIPTION RÉUSSIE !";
             setTimeout(() => { window.location.href = "login.html"; }, 1500);
 
         } catch (e) {
-            status.innerText = "⚠️ Erreur satellite. Réessayez.";
+            status.innerText = "⚠️ Erreur technique Firebase.";
             console.error(e);
         }
     };
