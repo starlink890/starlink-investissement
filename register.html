@@ -8,7 +8,6 @@
         :root { --blue: #00d2ff; --dark: #050a14; }
         body { 
             margin: 0; font-family: 'Segoe UI', sans-serif; 
-            /* Mise à jour de l'image de fond */
             background: var(--dark) url('IMG_0870.jpeg') no-repeat center center fixed;
             background-size: cover; color: white; 
             display: flex; justify-content: center; align-items: center; 
@@ -45,11 +44,11 @@
     <div class="card">
         <h1 style="color:var(--blue); letter-spacing:3px; margin-bottom: 5px;">STARLINK</h1>
         <p style="margin-top: 0; opacity: 0.8;">CRÉER UN COMPTE</p>
-        <div id="loadingMsg" style="font-size:10px; color:gray; margin-bottom: 10px;">Initialisation Système...</div>
+        <div id="loadingMsg" style="font-size:10px; color:gray; margin-bottom: 10px;">Liaison Satellite...</div>
         
         <input type="tel" id="regPhone" placeholder="Téléphone (ex: 08...)" maxlength="10">
         <input type="password" id="regPass" placeholder="Mot de passe (6 car. min)">
-        <input type="text" id="referralInput" placeholder="Code d'invitation (Optionnel)">
+        <input type="text" id="referralInput" placeholder="Code d'invitation (Automatique)">
         
         <button id="btnAction">S'INSCRIRE MAINTENANT</button>
         <div id="statusMsg" class="status"></div>
@@ -75,8 +74,21 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    
-    document.getElementById('loadingMsg').innerText = "✅ Système de Liaison Prêt";
+
+    // --- NOVEAU : CAPTURER LE CODE D'INVITATION DANS LE LIEN ---
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('inviteCode');
+        if (code) {
+            const input = document.getElementById("referralInput");
+            input.value = code;
+            input.readOnly = true; // Empêche de modifier le parrain
+            input.style.borderColor = "#4caf50";
+            document.getElementById('loadingMsg').innerText = "📡 Invitation détectée : " + code;
+        } else {
+            document.getElementById('loadingMsg').innerText = "✅ Système de Liaison Prêt";
+        }
+    });
 
     document.getElementById("btnAction").addEventListener("click", async () => {
         const phone = document.getElementById("regPhone").value.trim();
@@ -84,18 +96,10 @@
         const status = document.getElementById("statusMsg");
         const sponsor = document.getElementById("referralInput").value.trim() || "DIRECT";
 
+        if (phone.length < 10) { status.innerText = "❌ Numéro invalide"; return; }
+        if (pass.length < 6) { status.innerText = "❌ Mot de passe trop court"; return; }
+
         status.innerText = "⏳ Analyse des données...";
-
-        // Validation numéro RDC simplifié
-        if (phone.length < 10) {
-            status.innerText = "❌ Numéro invalide (10 chiffres requis)";
-            return;
-        }
-
-        if (pass.length < 6) {
-            status.innerText = "❌ Mot de passe trop court (6 min)";
-            return;
-        }
 
         try {
             const userRef = ref(db, 'users/' + phone);
@@ -106,7 +110,6 @@
                 return;
             }
 
-            // Génération d'un code unique
             const myCode = "STAR-" + Math.floor(1000 + Math.random() * 9000);
             
             await set(userRef, {
@@ -124,7 +127,7 @@
             setTimeout(() => { window.location.href = "login.html"; }, 1500);
 
         } catch (e) {
-            status.innerText = "⚠️ Erreur satellite. Vérifiez votre connexion.";
+            status.innerText = "⚠️ Erreur satellite.";
             console.error(e);
         }
     });
