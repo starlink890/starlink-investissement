@@ -48,7 +48,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, set, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
@@ -59,62 +59,88 @@
         appId: "1:807081599583:web:e00ec3959bc4acdae031ea"
     };
 
-    // Initialisation sécurisée
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // --- CAPTURE AUTOMATIQUE DU CODE D'INVITATION ---
-    // Cette partie remplit la case toute seule sans faire bugger la page
+    // Capture automatique du code dans l'URL
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('inviteCode');
         if (code) {
             document.getElementById("referralInput").value = code;
             document.getElementById("referralInput").readOnly = true;
-            document.getElementById("referralInput").style.border = "2px solid #00d2ff";
         }
-    } catch (e) { console.log("Pas de code détecté"); }
+    } catch (e) { console.log("Lien direct"); }
 
     document.getElementById("btnAction").onclick = async () => {
         const phone = document.getElementById("regPhone").value.trim();
         const pass = document.getElementById("regPass").value.trim();
         const status = document.getElementById("statusMsg");
-        const sponsor = document.getElementById("referralInput").value.trim() || "DIRECT";
+        const sponsorCode = document.getElementById("referralInput").value.trim();
 
         if (phone.length < 10 || pass.length < 6) {
-            status.innerText = "❌ Vérifiez les champs (10 chiffres / 6 car. min)";
+            status.innerText = "❌ Vérifiez vos informations (10 chiffres / 6 car.)";
             return;
         }
 
-        status.innerText = "⏳ Connexion satellite...";
+        status.innerText = "⏳ Analyse de la liaison...";
 
         try {
-            const userRef = ref(db, 'users/' + phone);
-            const snap = await get(userRef);
-            
-            if (snap.exists()) {
-                status.innerText = "❌ Numéro déjà enregistré.";
+            // 1. Vérifier si l'utilisateur existe
+            const userSnap = await get(ref(db, 'users/' + phone));
+            if (userSnap.exists()) {
+                status.innerText = "❌ Numéro déjà utilisé.";
                 return;
             }
 
-            const myCode = "STAR-" + Math.floor(1000 + Math.random() * 9000);
-            
-            await set(userRef, {
+            // 2. Trouver le parrain (Sponsor)
+            let sponsorPhone = null;
+            if (sponsorCode) {
+                const usersSnap = await get(ref(db, 'users'));
+                const allUsers = usersSnap.val();
+                for (let id in allUsers) {
+                    if (allUsers[id].inviteCode === sponsorCode) {
+                        sponsorPhone = id;
+                        break;
+                    }
+                }
+            }
+
+            // 3. Créer les données du nouvel utilisateur
+            const myNewCode = "STAR-" + Math.floor(1000 + Math.random() * 9000);
+            const userData = {
                 password: pass,
-                inviteCode: myCode,
-                referredBy: sponsor,
+                inviteCode: myNewCode,
+                referredBy: sponsorPhone || "DIRECT", // On stocke le TEL du parrain pour faciliter les calculs
                 solde_principal: 0,
                 solde_gains: 0,
                 solde_commissions: 0,
+                count_lvl1: 0,
+                count_lvl2: 0,
+                count_lvl3: 0,
                 date_inscription: new Date().toISOString()
-            });
+            };
+
+            await set(ref(db, 'users/' + phone), userData);
+
+            // 4. Augmenter le compteur Niveau 1 du parrain
+            if (sponsorPhone) {
+                const sponsorRef = ref(db, 'users/' + sponsorPhone);
+                const snapSponsor = await get(sponsorRef);
+                if (snapSponsor.exists()) {
+                    const currentCount = snapSponsor.val().count_lvl1 || 0;
+                    await update(ref(db, 'users/' + sponsorPhone), {
+                        count_lvl1: currentCount + 1
+                    });
+                }
+            }
 
             status.style.color = "#4caf50";
             status.innerText = "✅ INSCRIPTION RÉUSSIE !";
             setTimeout(() => { window.location.href = "login.html"; }, 1500);
 
         } catch (e) {
-            status.innerText = "⚠️ Erreur de connexion Firebase.";
+            status.innerText = "⚠️ Erreur satellite. Réessayez.";
             console.error(e);
         }
     };
