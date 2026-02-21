@@ -8,7 +8,6 @@
         :root { --blue: #00d2ff; --dark: #050a14; }
         body { 
             margin: 0; font-family: 'Segoe UI', sans-serif; 
-            /* Mise à jour du background ici */
             background: var(--dark) url('IMG_0870.jpeg') no-repeat center center fixed;
             background-size: cover; color: white; 
             display: flex; justify-content: center; align-items: center; 
@@ -61,11 +60,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // NOUVELLE CONFIGURATION STARLINK INVESTIT
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
-        authDomain: "dell-invest.firebaseapp.com",
-        projectId: "dell-invest",
-        storageBucket: "dell-invest.firebasestorage.app",
+        authDomain: "starlink-investit.firebaseapp.com",
+        databaseURL: "https://starlink-investit-default-rtdb.firebaseio.com",
+        projectId: "starlink-investit",
+        storageBucket: "starlink-investit.firebasestorage.app",
         messagingSenderId: "807081599583",
         appId: "1:807081599583:web:e00ec3959bc4acdae031ea"
     };
@@ -84,25 +85,27 @@
         }
 
         try {
-            status.innerText = "⏳ Authentification en cours...";
+            status.innerText = "⏳ Authentification terminal...";
             const userRef = ref(db, 'users/' + phone);
             const snap = await get(userRef);
 
             if (snap.exists()) {
                 const userData = snap.val();
                 if (userData.password === pass) {
+                    // Sauvegarde de la session
                     localStorage.setItem("userPhone", phone);
                     status.style.color = "#4caf50";
-                    status.innerText = "🚀 Connexion réussie ! Redirection...";
+                    status.innerText = "🚀 Accès autorisé. Connexion...";
                     setTimeout(() => { window.location.href = "dashboard.html"; }, 1200);
                 } else {
                     status.innerText = "❌ Mot de passe incorrect.";
                 }
             } else {
-                status.innerText = "❌ Ce numéro n'est pas enregistré.";
+                status.innerText = "❌ Aucun compte trouvé pour ce numéro.";
             }
         } catch (e) {
-            status.innerText = "⚠️ Erreur de connexion réseau.";
+            status.innerText = "⚠️ Erreur de liaison satellite.";
+            console.error(e);
         }
     });
 </script>
