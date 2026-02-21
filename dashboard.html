@@ -82,7 +82,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, get, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // CONFIGURATION STARLINK INVESTIT
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
         authDomain: "starlink-investit.firebaseapp.com",
@@ -107,7 +106,11 @@
         if(data) {
             document.getElementById("userID").innerText = "ID: " + (data.inviteCode || "STAR-USER");
             document.getElementById("balPrincipal").innerText = (data.solde_principal || 0).toLocaleString() + " FC";
-            document.getElementById("balGains").innerText = Math.floor(data.solde_gains || 0).toLocaleString() + " FC";
+            
+            // CORRECTION ICI : Somme Gains + Commissions pour l'affichage retirable
+            const totalRetirable = (data.solde_gains || 0) + (data.solde_commissions || 0);
+            document.getElementById("balGains").innerText = Math.floor(totalRetirable).toLocaleString() + " FC";
+            
             mesInvests = data.mes_investissements || {};
             afficherMachines();
         }
