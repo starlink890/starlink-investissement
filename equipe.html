@@ -117,43 +117,60 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Récupération du téléphone utilisateur
     const userPhone = localStorage.getItem("userPhone");
-    if(!userPhone) window.location.href = "login.html";
+    if(!userPhone) {
+        window.location.href = "login.html";
+    } else {
+        // Branchement en temps réel sur l'utilisateur
+        const userRef = ref(db, 'users/' + userPhone);
+        onValue(userRef, (snap) => {
+            const data = snap.val();
+            if(data) {
+                // Mise à jour du code
+                document.getElementById("myCode").innerText = data.inviteCode || "STAR-0000";
+                
+                // Mise à jour des gains (commissions)
+                const gains = data.solde_commissions || 0;
+                document.getElementById("totalGains").innerText = gains.toLocaleString() + " FC";
+                
+                // Mise à jour des compteurs par niveau
+                const l1 = parseInt(data.count_lvl1 || 0);
+                const l2 = parseInt(data.count_lvl2 || 0);
+                const l3 = parseInt(data.count_lvl3 || 0);
+                
+                document.getElementById("lvl1Count").innerText = l1;
+                document.getElementById("lvl2Count").innerText = l2;
+                document.getElementById("lvl3Count").innerText = l3;
+                
+                // Calcul du total
+                document.getElementById("totalTeam").innerText = (l1 + l2 + l3);
+            }
+        });
+    }
 
-    onValue(ref(db, 'users/' + userPhone), (snap) => {
-        const data = snap.val();
-        if(data) {
-            document.getElementById("myCode").innerText = data.inviteCode || "STAR-0000";
-            document.getElementById("totalGains").innerText = (data.solde_commissions || 0).toLocaleString() + " FC";
-            document.getElementById("lvl1Count").innerText = data.count_lvl1 || 0;
-            document.getElementById("lvl2Count").innerText = data.count_lvl2 || 0;
-            document.getElementById("lvl3Count").innerText = data.count_lvl3 || 0;
-            const total = (data.count_lvl1 || 0) + (data.count_lvl2 || 0) + (data.count_lvl3 || 0);
-            document.getElementById("totalTeam").innerText = total;
-        }
-    });
-
-    // --- CORRECTION DU LIEN DE PARRAINAGE ---
+    // GESTION DE LA COPIE DU LIEN
     document.getElementById("btnCopy").onclick = () => {
         const code = document.getElementById("myCode").innerText;
-        
-        // On force l'adresse complète pour éviter la page blanche
+        // Lien corrigé pointant vers ton dossier de projet GitHub
         const link = "https://starlink890.github.io/starlink-investissement/register.html?inviteCode=" + code;
         
-        // Méthode de copie ultra-compatible
-        const textArea = document.createElement("textarea");
-        textArea.value = link;
-        document.body.appendChild(textArea);
-        textArea.select();
+        // Système de copie robuste
+        const tempInput = document.createElement("textarea");
+        tempInput.value = link;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        
         try {
             document.execCommand('copy');
             const status = document.getElementById("copyStatus");
             status.style.display = "block";
             setTimeout(() => { status.style.display = "none"; }, 4000);
         } catch (err) {
-            alert("Lien : " + link);
+            console.error("Erreur de copie", err);
+            alert("Lien : " + link); // Backup si execCommand échoue
         }
-        document.body.removeChild(textArea);
+        document.body.removeChild(tempInput);
     };
 </script>
 
