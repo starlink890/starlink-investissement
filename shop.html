@@ -13,9 +13,7 @@
         }
         .header { padding: 30px 20px; text-align: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.5); border-bottom: 1px solid var(--blue); }
         .balance-info { color: var(--blue); font-size: 14px; margin-top: 10px; font-weight: bold; }
-        
         .container { padding: 20px; }
-        
         .product-card { 
             background: var(--glass); border-radius: 20px; border: 1px solid rgba(0, 210, 255, 0.2);
             padding: 15px; margin-bottom: 20px; display: flex; align-items: center;
@@ -26,19 +24,13 @@
         .p-name { font-size: 14px; font-weight: bold; color: var(--blue); text-transform: uppercase; }
         .p-price { font-size: 18px; font-weight: 900; margin: 3px 0; }
         .p-gain { font-size: 11px; color: #4caf50; font-weight: bold; }
-        
         .btn-buy { 
             background: var(--blue); color: black; border: none; padding: 12px 10px; 
             border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s;
             min-width: 90px; font-size: 12px;
         }
         .btn-buy.locked { background: #444; color: #888; cursor: not-allowed; }
-
-        .navbar { 
-            position: fixed; bottom: 0; width: 100%; background: rgba(5, 10, 20, 0.95);
-            display: flex; justify-content: space-around; padding: 15px 0;
-            border-top: 1px solid var(--blue); backdrop-filter: blur(10px); z-index: 100;
-        }
+        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(5, 10, 20, 0.95); display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid var(--blue); backdrop-filter: blur(10px); z-index: 100; }
         .nav-link { color: white; text-decoration: none; font-size: 12px; text-align: center; opacity: 0.6; }
         .nav-link.active { opacity: 1; color: var(--blue); }
     </style>
@@ -50,8 +42,7 @@
     <div class="balance-info">SOLDE: <span id="currentBalance">0</span> FC</div>
 </div>
 
-<div class="container" id="shop-container">
-    </div>
+<div class="container" id="shop-container"></div>
 
 <nav class="navbar">
     <a href="dashboard.html" class="nav-link">📊<br>Dash</a>
@@ -62,13 +53,15 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get, update, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, get, update, push, set, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // NOUVELLE CONFIGURATION STARLINK INVESTIT
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
-        authDomain: "dell-invest.firebaseapp.com",
-        projectId: "dell-invest",
-        storageBucket: "dell-invest.firebasestorage.app",
+        authDomain: "starlink-investit.firebaseapp.com",
+        databaseURL: "https://starlink-investit-default-rtdb.firebaseio.com",
+        projectId: "starlink-investit",
+        storageBucket: "starlink-investit.firebasestorage.app",
         messagingSenderId: "807081599583",
         appId: "1:807081599583:web:e00ec3959bc4acdae031ea"
     };
@@ -79,49 +72,15 @@
 
     if(!userPhone) window.location.href = "login.html";
 
-    // LISTE DES PRODUITS MISE À JOUR
     const mesProduits = [
         { id: "p1", nom: "START", prix: 5000, gain: 2000, icon: "📡" },
         { id: "p2", nom: "MINI", prix: 18000, gain: 4600, icon: "🛰️" },
         { id: "p3", nom: "PRO", prix: 65000, gain: 12000, icon: "🚀" },
         { id: "p4", nom: "ENTERPRISE", prix: 260000, gain: 42000, icon: "🌌" },
-        { id: "p5", nom: "STATION V3", prix: 470000, gain: 120000, icon: "🛸" }, // Tu avais dit 470k, j'ai mis 120k de gain (ajustable)
+        { id: "p5", nom: "STATION V3", prix: 470000, gain: 120000, icon: "🛸" },
         { id: "p6", nom: "ELITE X", prix: 1000000, gain: 350000, icon: "☄️" },
         { id: "p7", nom: "GALAXY MAX", prix: 2500000, gain: 480000, icon: "💎" }
     ];
-
-    function renderShop(userSolde) {
-        const container = document.getElementById("shop-container");
-        container.innerHTML = "";
-        
-        mesProduits.forEach(p => {
-            const card = document.createElement("div");
-            card.className = "product-card";
-            const canAfford = userSolde >= p.prix;
-            
-            card.innerHTML = `
-                <div class="product-img">${p.icon}</div>
-                <div class="product-info">
-                    <div class="p-name">STARLINK ${p.nom}</div>
-                    <div class="p-price">${p.prix.toLocaleString()} FC</div>
-                    <div class="p-gain">+${p.gain.toLocaleString()} FC / JOUR</div>
-                </div>
-                <button class="btn-buy ${canAfford ? '' : 'locked'}" id="btn-${p.id}">
-                    ${canAfford ? 'ACTIVER' : 'RECHARGER'}
-                </button>
-            `;
-            container.appendChild(card);
-            
-            document.getElementById(`btn-${p.id}`).onclick = () => {
-                if(!canAfford) {
-                    alert("❌ Solde insuffisant pour ce pack !");
-                    window.location.href = "recharge.html";
-                } else {
-                    tenterAchat(p);
-                }
-            };
-        });
-    }
 
     onValue(ref(db, 'users/' + userPhone), (snap) => {
         const data = snap.val();
@@ -132,47 +91,67 @@
         }
     });
 
+    function renderShop(userSolde) {
+        const container = document.getElementById("shop-container");
+        container.innerHTML = "";
+        mesProduits.forEach(p => {
+            const card = document.createElement("div");
+            card.className = "product-card";
+            const canAfford = userSolde >= p.prix;
+            card.innerHTML = `
+                <div class="product-img">${p.icon}</div>
+                <div class="product-info">
+                    <div class="p-name">STARLINK ${p.nom}</div>
+                    <div class="p-price">${p.prix.toLocaleString()} FC</div>
+                    <div class="p-gain">+${p.gain.toLocaleString()} FC / J</div>
+                </div>
+                <button class="btn-buy ${canAfford ? '' : 'locked'}" id="btn-${p.id}">
+                    ${canAfford ? 'ACTIVER' : 'RECHARGER'}
+                </button>
+            `;
+            container.appendChild(card);
+            document.getElementById(`btn-${p.id}`).onclick = () => {
+                if(!canAfford) { alert("❌ Solde insuffisant !"); }
+                else { tenterAchat(p); }
+            };
+        });
+    }
+
     async function tenterAchat(produit) {
+        if (!confirm("Activer " + produit.nom + " ?")) return;
+        
         const userRef = ref(db, 'users/' + userPhone);
         const snap = await get(userRef);
         const userData = snap.val();
 
-        if (confirm("Confirmer l'activation de " + produit.nom + " pour " + produit.prix + " FC ?")) {
-            try {
-                // Déduction du solde
-                await update(userRef, { solde_principal: userData.solde_principal - produit.prix });
+        try {
+            // 1. Déduire le prix du solde
+            await update(userRef, { solde_principal: userData.solde_principal - produit.prix });
 
-                // Ajout de la machine
-                const investRef = push(ref(db, 'users/' + userPhone + '/mes_investissements'));
-                await set(investRef, {
-                    nom: "STARLINK " + produit.nom,
-                    gainJournalier: produit.gain,
-                    dateAchat: new Date().toISOString(),
-                    dernierCollecte: new Date().toISOString(),
-                    actif: true
+            // 2. Ajouter la machine
+            const investRef = push(ref(db, `users/${userPhone}/mes_investissements`));
+            await set(investRef, {
+                nom: produit.nom,
+                gainJournalier: produit.gain,
+                dateAchat: new Date().toISOString(),
+                dernierCollecte: new Date().toISOString()
+            });
+
+            // 3. BONUS PARRAINAGE (25% du prix au parrain)
+            if (userData.referredBy && userData.referredBy !== "DIRECT") {
+                const parrainPhone = userData.referredBy;
+                const bonus = produit.prix * 0.25;
+                const parrainCommRef = ref(db, `users/${parrainPhone}/solde_commissions`);
+                
+                // Utilisation de transaction pour ajouter le bonus sans erreur
+                await runTransaction(parrainCommRef, (current) => {
+                    return (current || 0) + bonus;
                 });
-
-                // Bonus Parrainage (25%)
-                if (userData.referredBy && userData.referredBy !== "DIRECT") {
-                    const usersRef = ref(db, 'users');
-                    const usersSnap = await get(usersRef);
-                    usersSnap.forEach((u) => {
-                        if(u.val().inviteCode === userData.referredBy) {
-                            const bonus = produit.prix * 0.25;
-                            update(ref(db, 'users/' + u.key), {
-                                solde_gains: (u.val().solde_gains || 0) + bonus
-                            });
-                        }
-                    });
-                }
-
-                alert("🚀 Félicitations ! Satellite activé.");
-                window.location.href = "dashboard.html";
-
-            } catch (error) {
-                alert("Erreur lors de la transaction.");
             }
-        }
+
+            alert("🚀 Satellite activé !");
+            window.location.href = "dashboard.html";
+        } catch (e) { alert("Erreur satellite."); }
     }
 </script>
 </body>
