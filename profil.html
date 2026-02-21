@@ -8,7 +8,6 @@
         :root { --blue: #00d2ff; --dark: #050a14; --glass: rgba(255, 255, 255, 0.05); }
         body { 
             margin: 0; font-family: 'Segoe UI', sans-serif; 
-            /* Arrière-plan mis à jour ici */
             background: var(--dark) url('IMG_0870.jpeg') no-repeat center center fixed;
             background-size: cover; color: white; padding-bottom: 100px;
         }
@@ -42,7 +41,6 @@
             margin-top: 20px; cursor: pointer; backdrop-filter: blur(10px);
         }
         
-        /* Navbar Basse */
         .navbar { 
             position: fixed; bottom: 0; width: 100%; background: rgba(5, 10, 20, 0.98); 
             display: flex; justify-content: space-around; padding: 15px 0; 
@@ -96,11 +94,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+    // NOUVELLE CONFIGURATION STARLINK INVESTIT
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
-        authDomain: "dell-invest.firebaseapp.com",
-        projectId: "dell-invest",
-        storageBucket: "dell-invest.firebasestorage.app",
+        authDomain: "starlink-investit.firebaseapp.com",
+        databaseURL: "https://starlink-investit-default-rtdb.firebaseio.com",
+        projectId: "starlink-investit",
+        storageBucket: "starlink-investit.firebasestorage.app",
         messagingSenderId: "807081599583",
         appId: "1:807081599583:web:e00ec3959bc4acdae031ea"
     };
@@ -121,7 +121,7 @@
     });
 
     document.getElementById("btnLogout").onclick = () => {
-        if(confirm("Confirmer la déconnexion de Starlink ?")) {
+        if(confirm("Déconnexion du terminal Starlink ?")) {
             localStorage.clear();
             window.location.href = "login.html";
         }
