@@ -56,9 +56,9 @@
     <input type="number" id="rechargeAmount" placeholder="Montant en FC">
 
     <div class="payment-info">
-        <p><strong> Airtel Money :</strong> <span id="numAirtel">0997617251</span></p>
-        <p><strong> Orange Money :</strong> <span id="numOrange">0891658826</span></p>
-        <p style="color: yellow; font-size: 11px;">⚠️ Envoyez le montant, puis collez l'ID de transaction ci-dessous.</p>
+        <p><strong> Airtel Money :</strong> <span>0997617251</span></p>
+        <p><strong> Orange Money :</strong> <span>0891658826</span></p>
+        <p><strong> M-Pesa (Vodacom) :</strong> <span>0816912373</span></p> <p style="color: yellow; font-size: 11px; margin-top: 10px;">⚠️ Envoyez le montant, puis collez l'ID de transaction ci-dessous.</p>
     </div>
 
     <input type="text" id="transID" placeholder="ID de transaction (ex: 1234567890)">
@@ -71,7 +71,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    // NOUVELLE CONFIGURATION STARLINK INVESTIT
     const firebaseConfig = {
         apiKey: "AIzaSyA24pBo8mBWiZssPtep--MMBdB7c8_Lu4U",
         authDomain: "starlink-investit.firebaseapp.com",
